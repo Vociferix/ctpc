@@ -19,16 +19,15 @@ struct AltParser<> {
     friend struct AltParser;
 
     template <typename Ret, Input I>
-    constexpr auto call(I&& input) const -> ParseResultOf<Ret, I> {
-        return fail<Ret>(std::forward<I>(input));
+    constexpr auto call(I input) const -> ParseResultOf<Ret, I> {
+        return fail<Ret>(input);
     }
 
   public:
     constexpr AltParser() = default;
 
-    template <Input I>
-    constexpr auto operator()(I&& input) const {
-        return call<void>(std::forward<I>(input));
+    constexpr auto operator()(Input auto input) const {
+        return call<void>(input);
     }
 };
 
@@ -42,28 +41,28 @@ struct AltParser<P1, PN...> {
     friend struct AltParser;
 
     template <typename Ret, typename T, ParseableBy<P1> I>
-    static constexpr auto call_impl(T&& self, I&& input) -> ParseResultOf<Ret, I> {
+    static constexpr auto call_impl(T&& self, I input) -> ParseResultOf<Ret, I> {
         auto res = self.parser_(input);
         if (res) {
             return res;
         } else {
-            return std::forward<T>(self).inner_.template call<Ret>(std::forward<I>(input));
+            return std::forward<T>(self).inner_.template call<Ret>(input);
         }
     }
 
     template <typename Ret, ParseableBy<P1> I>
-    constexpr auto call(I&& input) & -> ParseResultOf<Ret, I> {
-        return call_impl<Ret>(*this, std::forward<I>(input));
+    constexpr auto call(I input) & -> ParseResultOf<Ret, I> {
+        return call_impl<Ret>(*this, input);
     }
 
     template <typename Ret, ParseableBy<P1> I>
-    constexpr auto call(I&& input) const& -> ParseResultOf<Ret, I> {
-        return call_impl<Ret>(*this, std::forward<I>(input));
+    constexpr auto call(I input) const& -> ParseResultOf<Ret, I> {
+        return call_impl<Ret>(*this, input);
     }
 
     template <typename Ret, ParseableBy<P1> I>
-    constexpr auto call(I&& input) && -> ParseResultOf<Ret, I> {
-        return call_impl<Ret>(std::move(*this), std::forward<I>(input));
+    constexpr auto call(I input) && -> ParseResultOf<Ret, I> {
+        return call_impl<Ret>(std::move(*this), input);
     }
 
     template <typename I>
@@ -74,19 +73,16 @@ struct AltParser<P1, PN...> {
         : parser_(std::forward<P1>(parser)),
           inner_(std::forward<PN>(inner)...) {}
 
-    template <ParseableBy<P1> I>
-    constexpr auto operator()(I&& input) & {
-        return call<ret_t<I>>(std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P1> auto input) & {
+        return call<ret_t<decltype(input)>>(input);
     }
 
-    template <ParseableBy<P1> I>
-    constexpr auto operator()(I&& input) const& {
-        return call<ret_t<I>>(std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P1> auto input) const& {
+        return call<ret_t<decltype(input)>>(input);
     }
 
-    template <ParseableBy<P1> I>
-    constexpr auto operator()(I&& input) && {
-        return std::move(*this).template call<ret_t<I>>(std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P1> auto input) && {
+        return std::move(*this).template call<ret_t<decltype(input)>>(input);
     }
 };
 

@@ -22,8 +22,8 @@ template <typename T, typename I>
 concept parse_result_of = is_parse_result_of_v<std::remove_cvref_t<T>, std::remove_cvref_t<I>>;
 
 template <typename P, typename I>
-concept ParserOf1 = Input<I> && requires(P&& parser, I&& input) {
-    { std::forward<P>(parser)(std::forward<I>(input)) } -> parse_result_of<I>;
+concept ParserOf1 = Input<I> && requires(P&& parser, I input) {
+    { std::forward<P>(parser)(input) } -> parse_result_of<I>;
 };
 
 template <typename I, typename P>

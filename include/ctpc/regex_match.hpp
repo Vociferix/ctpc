@@ -12,7 +12,7 @@ namespace ctpc {
 
 template <ctll::fixed_string REGEX>
 struct RegexMatch {
-    constexpr auto operator()(TextInput auto&& input) const {
+    constexpr auto operator()(TextInput auto input) const {
         auto begin = std::ranges::begin(input);
         auto end = std::ranges::end(input);
         auto res = ctre::starts_with<REGEX>(begin, end);
@@ -20,7 +20,7 @@ struct RegexMatch {
         if (res) {
             return pass<ret_t>(std::ranges::subrange(res.end(), end), std::ranges::subrange(res.begin(), res.end()));
         } else {
-            return fail<ret_t>(std::forward<decltype(input)>(input));
+            return fail<ret_t>(input);
         }
     }
 };

@@ -28,7 +28,7 @@ template <ConstInput MATCH>
 struct Verbatim {
     using match_type = std::remove_cvref_t<decltype(MATCH)>;
 
-    constexpr auto operator()(detail::VerbatimTextInput<match_type> auto&& input) const {
+    constexpr auto operator()(detail::VerbatimTextInput<match_type> auto input) const {
         using input_char_t = std::remove_cvref_t<std::ranges::range_value_t<std::remove_cvref_t<decltype(input)>>>;
 
         if constexpr (std::is_same_v<input_char_t, std::remove_cvref_t<typename match_type::value_type>>) {
@@ -69,7 +69,7 @@ struct Verbatim {
         }
     }
 
-    constexpr auto operator()(detail::VerbatimStringyInput<match_type> auto&& input) const {
+    constexpr auto operator()(detail::VerbatimStringyInput<match_type> auto input) const {
         const auto& match = MATCH;
         using pass_t = decltype(match);
 
@@ -89,7 +89,7 @@ struct Verbatim {
         return pass<pass_t>(std::ranges::subrange(ibegin, iend), std::ranges::subrange(match));
     }
 
-    constexpr auto operator()(detail::VerbatimNormalInput<match_type> auto&& input) const {
+    constexpr auto operator()(detail::VerbatimNormalInput<match_type> auto input) const {
         const auto& match = MATCH;
         using pass_t = decltype(match);
 

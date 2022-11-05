@@ -43,8 +43,8 @@ struct MapParser {
     M mapper_;
 
     template <typename T, ParseableBy<P> I>
-    static constexpr auto call(T&& self, I&& input) {
-        return self.parser_(std::forward<I>(input)).map([&self] (auto&&... value) {
+    static constexpr auto call(T&& self, I input) {
+        return self.parser_(input).map([&self] (auto&&... value) {
             return map_impl(self.mapper_, std::forward<decltype(value)>(value)...);
         });
     }
@@ -54,19 +54,16 @@ struct MapParser {
         : parser_(std::forward<P>(parser)),
           mapper_(std::forward<M>(mapper)) {}
 
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I&& input) & {
-        return call(*this, std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P> auto input) & {
+        return call(*this, input);
     }
 
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I&& input) const& {
-        return call(*this, std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P> auto input) const& {
+        return call(*this, input);
     }
 
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I&& input) && {
-        return call(std::move(*this), std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P> auto input) && {
+        return call(std::move(*this), input);
     }
 };
 

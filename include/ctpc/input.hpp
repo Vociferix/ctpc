@@ -11,6 +11,7 @@ namespace ctpc {
 
 template <typename T>
 concept Input = std::ranges::forward_range<T> &&
+                std::ranges::borrowed_range<T> &&
                 !std::is_array_v<std::remove_cvref_t<T>> &&
                 !std::is_pointer_v<std::remove_cvref_t<T>>;
 

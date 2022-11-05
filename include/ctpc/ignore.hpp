@@ -15,27 +15,24 @@ struct IgnoreParser {
     P parser_;
 
     template <typename T, ParseableBy<P> I>
-    static constexpr auto call(T&& self, I&& input) {
-        return std::forward<T>(self).parser_(std::forward<I>(input)).map([] ([[maybe_unused]] auto&&... vals) -> void {});
+    static constexpr auto call(T&& self, I input) {
+        return std::forward<T>(self).parser_(input).map([] ([[maybe_unused]] auto&&... vals) -> void {});
     }
 
   public:
     explicit constexpr IgnoreParser(P&& parser)
         : parser_(std::forward<P>(parser)) {}
 
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I&& input) & {
-        return call(*this, std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P> auto input) & {
+        return call(*this, input);
     }
 
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I&& input) const& {
-        return call(*this, std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P> auto input) const& {
+        return call(*this, input);
     }
 
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I&& input) && {
-        return call(std::move(*this), std::forward<I>(input));
+    constexpr auto operator()(ParseableBy<P> auto input) && {
+        return call(std::move(*this), input);
     }
 };
 
