@@ -13,12 +13,12 @@ constexpr auto ignore_ws(auto&& parser) {
     return delimited(ws, std::forward<decltype(parser)>(parser), ws);
 }
 
-static constexpr auto plus = ignore_ws(regex_match<"\\+">);
-static constexpr auto minus = ignore_ws(regex_match<"-">);
-static constexpr auto star = ignore_ws(regex_match<"\\*">);
-static constexpr auto slash = ignore_ws(regex_match<"/">);
-static constexpr auto lparen = ignore_ws(regex_match<"\\(">);
-static constexpr auto rparen = ignore_ws(regex_match<"\\)">);
+static constexpr auto plus = ignore_ws(verbatim<"+">);
+static constexpr auto minus = ignore_ws(verbatim<"-">);
+static constexpr auto star = ignore_ws(verbatim<"*">);
+static constexpr auto slash = ignore_ws(verbatim<"/">);
+static constexpr auto lparen = ignore_ws(verbatim<"(">);
+static constexpr auto rparen = ignore_ws(verbatim<")">);
 
 static constexpr auto number = map(ignore_ws(regex_match<"\\d+">), [](Input auto&& input) {
     int64_t value = 0;

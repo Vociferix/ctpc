@@ -1,112 +1,104 @@
 #ifndef CTPC_VERBATIM_HPP
 #define CTPC_VERBATIM_HPP
 
+#include <algorithm>
 #include <ranges>
+#include <span>
+#include <string_view>
 #include <ctll/fixed_string.hpp>
 
 #include "input.hpp"
 #include "parser.hpp"
 #include "parse_result.hpp"
 #include "const_input.hpp"
+#include "utf.hpp"
 
 namespace ctpc {
 
-namespace detail {
-
-template <typename T, typename M>
-concept VerbatimTextInput = TextInput<T> && TextInput<M>;
-
-template <typename T, typename M>
-concept VerbatimStringyInput = InputOf<T, typename M::value_type> && (InputOf<T, unsigned char> || InputOf<T, uint8_t>);
-
-template <typename T, typename M>
-concept VerbatimNormalInput = InputOf<T, typename M::value_type> && !TextInput<T> && !InputOf<T, unsigned char> && !InputOf<T, uint8_t>;
-
-}
-
-template <ConstInput MATCH>
+template <ConstInput MATCH, typename = void>
 struct Verbatim {
     using match_type = std::remove_cvref_t<decltype(MATCH)>;
 
-    constexpr auto operator()(detail::VerbatimTextInput<match_type> auto input) const {
-        using input_char_t = std::remove_cvref_t<std::ranges::range_value_t<std::remove_cvref_t<decltype(input)>>>;
-
-        if constexpr (std::is_same_v<input_char_t, std::remove_cvref_t<typename match_type::value_type>>) {
-            const auto& match = MATCH;
-            using pass_t = decltype(match);
-
-            auto ibegin = std::ranges::begin(input);
-            auto iend = std::ranges::end(input);
-            const auto* mbegin = match.input;
-            const auto* mend = mbegin + (match_type::length - 1);
-            while (ibegin != iend && mbegin != mend) {
-                if (*ibegin != *mbegin) {
-                    return fail<pass_t>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)));
-                }
-            }
-            if (mbegin != mend) {
-                return fail<pass_t>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)));
-            }
-
-            return pass<pass_t>(std::ranges::subrange(ibegin, iend), std::ranges::subrange(match));
-        } else {
-            const auto& orig_match = MATCH;
-            const auto match_fixed_string = orig_match.to_fixed_string();
-            const auto& match = match_fixed_string;
-            input_char_t chars[match_type::length] = {};
-            auto ibegin = std::ranges::begin(input);
-            auto iend = std::ranges::end(input);
-            for (size_t i = 0; i < match_type::length; ++i, ++ibegin) {
-                if (!(ibegin != iend)) {
-                    return fail<decltype(orig_match)>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)));
-                }
-                chars[i] = *ibegin;
-            }
-            if (!match.is_same_as(ctll::fixed_string(chars))) {
-                return fail<decltype(orig_match)>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)));
-            }
-            return pass<decltype(orig_match)>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)), orig_match);
-        }
-    }
-
-    constexpr auto operator()(detail::VerbatimStringyInput<match_type> auto input) const {
-        const auto& match = MATCH;
-        using pass_t = decltype(match);
-
-        auto ibegin = std::ranges::begin(input);
-        auto iend = std::ranges::end(input);
-        const auto* mbegin = match.input;
-        const auto* mend = mbegin + (match_type::length - 1);
-        while (ibegin != iend && mbegin != mend) {
-            if (*ibegin != *mbegin) {
-                return fail<pass_t>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)));
-            }
-        }
-        if (mbegin != mend) {
-            return fail<pass_t>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)));
-        }
-
-        return pass<pass_t>(std::ranges::subrange(ibegin, iend), std::ranges::subrange(match));
-    }
-
-    constexpr auto operator()(detail::VerbatimNormalInput<match_type> auto input) const {
-        const auto& match = MATCH;
-        using pass_t = decltype(match);
-
-        auto ibegin = std::ranges::begin(input);
-        auto iend = std::ranges::end(input);
+    template <InputOf<typename std::remove_cvref_t<decltype(MATCH)>::value_type> I>
+    constexpr auto operator()(I input) const {
+        using ret_t = std::span<typename match_type::value_type, match_type::length>;
+        std::ranges::subrange in{input};
+        ret_t match{MATCH.input};
+        auto ibegin = std::ranges::begin(in);
+        auto iend = std::ranges::end(in);
         auto mbegin = std::ranges::begin(match);
         auto mend = std::ranges::end(match);
         while (ibegin != iend && mbegin != mend) {
             if (*ibegin != *mbegin) {
-                return fail<pass_t>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)));
+                return fail<ret_t>(input);
             }
+            ++ibegin;
+            ++mbegin;
         }
         if (mbegin != mend) {
-            return fail<pass_t>(std::ranges::subrange(std::ranges::begin(input), std::ranges::end(input)));
-        } 
+            return fail<ret_t>(input);
+        }
+        return pass<ret_t>(
+            std::ranges::subrange(ibegin, iend),
+            match
+        );
+    }
+};
 
-        return pass<pass_t>(std::ranges::subrange(ibegin, iend), std::ranges::subrange(match));
+namespace detail {
+
+template <typename To, typename Range>
+constexpr size_t verbatim_converted_size(Range&& range) {
+    size_t count = 0;
+    std::ranges::subrange(std::ranges::begin(range), std::ranges::end(range) - 1);
+    for ([[maybe_unused]] auto c : utils::utf_convert<To>(std::ranges::subrange(std::ranges::begin(range), std::ranges::end(range) - 1))) {
+        ++count;
+    }
+    return count;
+}
+
+template <typename To, size_t N, typename Range>
+constexpr std::array<To, N> verbatim_convert(Range&& range) {
+    std::array<To, N> ret{};
+    auto converted = utils::utf_convert<To>(std::forward<Range>(range));
+    auto it = std::ranges::begin(converted);
+    for (size_t i = 0; i < N - 1; ++i, ++it) {
+        ret[i] = *it;
+    }
+    return ret;
+}
+
+}
+
+template <ConstInput MATCH>
+struct Verbatim<MATCH, std::enable_if_t<utils::is_text_char_v<typename std::remove_cvref_t<decltype(MATCH)>::value_type>>> {
+    template <typename To>
+    static constexpr auto converted_match = detail::verbatim_convert<To, detail::verbatim_converted_size<To>(MATCH) + 1>(MATCH);
+
+    template <TextInput I>
+    constexpr ParseResultOf<std::basic_string_view<std::remove_cvref_t<decltype(*std::ranges::begin(std::declval<I>()))>>, I>
+    operator()(I input) const {
+        using input_char = std::remove_cvref_t<decltype(*std::ranges::begin(input))>;
+        std::ranges::subrange in{input};
+        std::basic_string_view<input_char> match{converted_match<input_char>.data()};
+        auto ibegin = std::ranges::begin(in);
+        auto iend = std::ranges::end(in);
+        auto mbegin = std::ranges::begin(match);
+        auto mend = std::ranges::end(match);
+        while (ibegin != iend && mbegin != mend) {
+            if (*ibegin != *mbegin) {
+                return fail<std::basic_string_view<input_char>>(input);
+            }
+            ++ibegin;
+            ++mbegin;
+        }
+        if (mbegin != mend) {
+            return fail<std::basic_string_view<input_char>>(input);
+        }
+        return pass<std::basic_string_view<input_char>>(
+            std::ranges::subrange(ibegin, iend),
+            match
+        );
     }
 };
 

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <ranges>
+#include <span>
 
 namespace ctpc {
 
@@ -19,6 +20,10 @@ struct ConstInput {
         std::copy(std::ranges::begin(in), std::ranges::end(in), std::ranges::begin(input));
     }
 
+    constexpr ConstInput(std::span<const T, N> in) : input{} {
+        std::copy(std::ranges::begin(in), std::ranges::end(in), std::ranges::begin(input));
+    }
+
     constexpr decltype(auto) begin() const {
         return std::ranges::begin(input);
     }
@@ -26,14 +31,16 @@ struct ConstInput {
     constexpr decltype(auto) end() const {
         return std::ranges::end(input);
     }
-
-    constexpr auto to_fixed_string() const {
-        return ctll::fixed_string(input);
-    }
 };
 
 template <typename T, size_t N>
-ConstInput(const T (&in)[N]) -> ConstInput<T, N>;
+ConstInput(T (&in)[N]) -> ConstInput<std::remove_const_t<T>, N>;
+
+template <typename T, size_t N>
+ConstInput(std::span<T, N>) -> ConstInput<std::remove_const_t<T>, N>;
+
+template <typename T, size_t N>
+ConstInput(const std::array<T, N>&) -> ConstInput<T, N>;
 
 }
 
