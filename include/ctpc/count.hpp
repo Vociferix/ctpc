@@ -1,18 +1,18 @@
-#ifndef CTPC_MANY0_HPP
-#define CTPC_MANY0_HPP
+#ifndef CTPC_COUNT_HPP
+#define CTPC_COUNT_HPP
 
 #include "parser.hpp"
 #include "input.hpp"
 #include "parse_result.hpp"
-#include "utils.hpp"
 
 namespace ctpc {
 
 namespace detail {
 
 template <typename P, typename R, typename T>
-struct Many0Parser {
+struct CountParser {
   private:
+    size_t count_;
     [[no_unique_address]] P parser_;
     [[no_unique_address]] R reduce_;
     [[no_unique_address]] T init_;
@@ -22,7 +22,15 @@ struct Many0Parser {
         if constexpr (std::is_same_v<std::remove_cvref_t<T>, utils::DefaultReduceInit>) {
             using item_t = decltype(*self.parser_(std::declval<I>()));
             using accum_t = decltype(self.reduce_({}, std::declval<item_t>()));
-            return accum_t{};
+            if constexpr (utils::Reservable<accum_t>) {
+                accum_t accum{};
+                accum.reserve(self.count_);
+                return accum;
+            } else {
+                return accum_t{};
+            }
+        } else if constexpr (std::invocable<T, size_t>) {
+            return self.init_(self.count_);
         } else if constexpr (std::invocable<T>) {
             return self.init_();
         } else {
@@ -31,51 +39,56 @@ struct Many0Parser {
     }
 
     template <typename Self, ParseableBy<P> I>
-    static constexpr auto call(Self&& self, I input) -> ParseResultOf<decltype(init<I>()), I> {
-        auto accum = init<I>(self);
+    static constexpr auto call(Self&& self, I input) {
+        auto accum = init<T>(self);
         std::ranges::subrange in{input};
-        for (;;) {
+        for (size_t i = 0; i < self.count_; ++i) {
             auto res = self.parser_(in);
             if (!res) {
-                break;
+                return fail<decltype(accum)>(input);
             }
-            in = res.remaining();
+            in = res.remaing();
             accum = utils::invoke_unpacked(self.reduce_, *std::move(res));
         }
         return pass<decltype(accum)>(in, std::move(accum));
     }
 
   public:
-    constexpr Many0Parser(P&& parser, R&& reduce, T&& init)
-        : parser_(std::forward<P>(parser)),
+    constexpr CountParser(P&& parser, size_t count, R&& reduce, T&& init)
+        : count_(count),
+          parser_(std::forward<P>(parser)),
           reduce_(std::forward<R>(reduce)),
           init_(std::forward<T>(init)) {}
 
-    constexpr auto operator()(Input auto input) & {
+    template <ParseableBy<P> I>
+    constexpr auto operator()(I input) & {
         return call(*this, input);
     }
 
-    constexpr auto operator()(Input auto input) const& {
+    template <ParseableBy<P> I>
+    constexpr auto operator()(I input) const& {
         return call(*this, input);
     }
 
-    constexpr auto operator()(Input auto input) && {
+    template <ParseableBy<P> I>
+    constexpr auto operator()(I input) && {
         return call(std::move(*this), input);
     }
 };
 
 }
 
-struct Many0 {
+struct Count {
     template <typename P, typename R, typename T>
     constexpr auto operator()(P&& parser,
+                              size_t count,
                               R&& reduce = utils::default_reduce,
-                              T&& init = utils::default_reduce_init) const -> detail::Many0Parser<P, R, T> {
-        return detail::Many0Parser<P, R, T>(std::forward<P>(parser), std::forward<R>(reduce), std::forward<T>(init));
+                              T&& init = utils::default_reduce_init) const -> detail::CountParser<P, R, T> {
+        return detail::CountParser<P, R, T>(std::forward<P>(parser), count, std::forward<R>(reduce), std::forward<T>(init));
     }
 };
 
-static constexpr Many0 many0{};
+static constexpr Count count{};
 
 }
 

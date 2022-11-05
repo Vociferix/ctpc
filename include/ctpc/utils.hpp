@@ -57,6 +57,25 @@ constexpr decltype(auto) invoke_unpacked(F&& func, Args&&... args) {
     return invoke_with_tuple(std::forward<F>(func), std::tuple_cat(into_tuple(std::forward<Args>(args))...));
 }
 
+struct DefaultReduce {
+    template <typename Item>
+    constexpr std::vector<std::remove_cvref_t<Item>> operator()(std::vector<std::remove_cvref_t<Item>> accum, Item&& item) const {
+        accum.emplace_back(std::forward<Item>(item));
+        return accum;
+    }
+};
+
+static constexpr DefaultReduce default_reduce{};
+
+struct DefaultReduceInit {};
+
+static constexpr DefaultReduceInit default_reduce_init{};
+
+template <typename T>
+concept Reservable = requires(T container) {
+    container.reserve(size_t{42});
+};
+
 }
 
 #endif
