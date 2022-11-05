@@ -9,6 +9,7 @@
 #include "alt.hpp"
 #include "seq.hpp"
 #include "ignore.hpp"
+#include "many0.hpp"
 #include "map.hpp"
 #include "verbatim.hpp"
 #include "regex_match.hpp"
