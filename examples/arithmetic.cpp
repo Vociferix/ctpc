@@ -34,53 +34,53 @@ static constexpr auto num_expr = alt(
 );
 
 template <Input I>
-constexpr ParseResultOf<int64_t, I> expr_(I&& input);
+constexpr ParseResultOf<int64_t, I> expr_(I input);
 static constexpr auto expr = CTPC_F(expr_);
 
 template <Input I>
-constexpr ParseResultOf<int64_t, I> term_(I&& input);
+constexpr ParseResultOf<int64_t, I> term_(I input);
 static constexpr auto term = CTPC_F(term_);
 
 template <Input I>
-constexpr ParseResultOf<int64_t, I> unary_(I&& input);
+constexpr ParseResultOf<int64_t, I> unary_(I input);
 static constexpr auto unary = CTPC_F(unary_);
 
 template <Input I>
-constexpr ParseResultOf<int64_t, I> primary_(I&& input);
+constexpr ParseResultOf<int64_t, I> primary_(I input);
 static constexpr auto primary = CTPC_F(primary_);
 
 template <Input I>
-constexpr ParseResultOf<int64_t, I> primary_(I&& input) {
+constexpr ParseResultOf<int64_t, I> primary_(I input) {
     return alt(
         number,
         delimited(lparen, expr, rparen)
-    )(std::forward<I>(input));
+    )(input);
 }
 
 template <Input I>
-constexpr ParseResultOf<int64_t, I> unary_(I&& input) {
+constexpr ParseResultOf<int64_t, I> unary_(I input) {
     return alt(
         map(preceded(minus, unary), [](auto value) { return -value; }),
         primary
-    )(std::forward<I>(input));
+    )(input);
 }
 
 template <Input I>
-constexpr ParseResultOf<int64_t, I> term_(I&& input) {
+constexpr ParseResultOf<int64_t, I> term_(I input) {
     return alt(
         map(seq(unary, ignore(star), term), [](auto lhs, auto rhs) { return lhs * rhs; }),
         map(seq(unary, ignore(slash), term), [](auto lhs, auto rhs) { return lhs / rhs; }),
         unary
-    )(std::forward<I>(input));
+    )(input);
 }
 
 template <Input I>
-constexpr ParseResultOf<int64_t, I> expr_(I&& input) {
+constexpr ParseResultOf<int64_t, I> expr_(I input) {
     return alt(
         map(seq(term, ignore(plus), expr), [](auto lhs, auto rhs) { return lhs + rhs; }),
         map(seq(term, ignore(minus), expr), [](auto lhs, auto rhs) { return lhs - rhs; }),
         term
-    )(std::forward<I>(input));
+    )(input);
 }
 
 int main() {
