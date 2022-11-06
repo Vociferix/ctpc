@@ -26,7 +26,7 @@ methods you use can usually be determined by whether the parser will
 need to recurse, directly or indirectly.
 
 The first and simplest method is as follows:
-```
+```cpp
 // assume that `number` and `plus` are previously defined parsers
 static constexpr auto sum_expr = map(
     seq(number, plus, number),
@@ -44,7 +44,7 @@ operator, respectively). Additionally, this parser takes the two parsed
 `sum_expr`.
 
 The second, more flexible but verobse, method is as follows:
-```
+```cpp
 // forward declaration
 template <Input I>
 constexpr ParseResultOf<int, I> sum_expr_(I input);
