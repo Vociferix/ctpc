@@ -13,6 +13,7 @@ struct Preceded {
     };
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Preceded preceded{};
 
 }

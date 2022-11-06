@@ -120,6 +120,7 @@ struct Seq {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Seq seq{};
 
 }

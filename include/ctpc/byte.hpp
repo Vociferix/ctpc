@@ -22,6 +22,7 @@ struct Byte {
     }
 };
 
+/// @ingroup ctpc_parsers
 static constexpr Byte byte{};
 
 }

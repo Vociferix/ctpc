@@ -25,6 +25,7 @@ struct RegexMatch {
     }
 };
 
+/// @ingroup ctpc_parsers
 template <ctll::fixed_string REGEX>
 static constexpr RegexMatch<REGEX> regex_match{};
 

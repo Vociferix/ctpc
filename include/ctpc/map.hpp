@@ -52,6 +52,7 @@ struct Map {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Map map{};
 
 }

@@ -63,6 +63,7 @@ struct StaticCount {
     }
 };
 
+/// @ingroup ctpc_combinators
 template <size_t N>
 static constexpr StaticCount<N> static_count{};
 

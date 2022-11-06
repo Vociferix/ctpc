@@ -13,6 +13,7 @@ struct Terminated {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Terminated terminated{};
 
 }

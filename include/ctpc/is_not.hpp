@@ -50,6 +50,7 @@ struct IsNot {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr IsNot is_not{};
 
 }

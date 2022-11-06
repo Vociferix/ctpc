@@ -75,6 +75,7 @@ struct Many0 {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Many0 many0{};
 
 }

@@ -45,6 +45,7 @@ struct Ignore {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Ignore ignore{};
 
 }

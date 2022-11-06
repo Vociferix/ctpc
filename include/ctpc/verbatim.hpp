@@ -102,6 +102,7 @@ struct Verbatim<MATCH, std::enable_if_t<utils::is_text_char_v<typename std::remo
     }
 };
 
+/// @ingroup ctpc_parsers
 template <ConstInput MATCH>
 static constexpr Verbatim<MATCH> verbatim{};
 

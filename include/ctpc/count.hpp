@@ -88,6 +88,7 @@ struct Count {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Count count{};
 
 }

@@ -17,6 +17,7 @@ struct Delimited {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Delimited delimited{};
 
 }

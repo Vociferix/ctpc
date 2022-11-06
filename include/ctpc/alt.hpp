@@ -95,6 +95,7 @@ struct Alt {
     }
 };
 
+/// @ingroup ctpc_combinators
 static constexpr Alt alt{};
 
 }
