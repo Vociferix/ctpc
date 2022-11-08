@@ -1,4 +1,4 @@
-# ctpc - Compile Time Parser Combinator {#hwut}
+# ctpc - Compile Time Parser Combinator
 
 ctpc stands for "Compile Time Parser Combinator". This library is a
 collection of composable functions to build parsers of both text and
