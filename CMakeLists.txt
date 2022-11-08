@@ -25,12 +25,23 @@ option(CTPC_DOCS "Build ctpc docs" ON)
 if(CTPC_DOCS)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
+        file(READ "${PROJECT_SOURCE_DIR}/README.md" README)
+        string(REPLACE "\n" "\n/// " README "${README}")
+        configure_file(
+            "${PROJECT_SOURCE_DIR}/docs/mainpage.dox.in"
+            "${PROJECT_BINARY_DIR}/mainpage.dox"
+            @ONLY
+        )
         set(DOXYGEN_GENERATE_MAN NO)
         set(DOXYGEN_GENERATE_HTML YES)
         set(DOXYGEN_GENERATE_TREEVIEW YES)
         set(DOXYGEN_EXCLUDE_SYMBOLS detail)
         set(DOXYGEN_EXTRACT_STATIC YES)
         set(DOXYGEN_HIDE_SCOPE_NAMES YES)
-        doxygen_add_docs(docs "${PROJECT_SOURCE_DIR}/include")
+        doxygen_add_docs(docs
+            "${PROJECT_SOURCE_DIR}/include"
+            "${PROJECT_SOURCE_DIR}/docs/*.dox"
+            "${PROJECT_BINARY_DIR}/mainpage.dox"
+        )
     endif()
 endif()
