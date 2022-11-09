@@ -35,9 +35,16 @@ if(CTPC_DOCS)
         set(DOXYGEN_GENERATE_MAN NO)
         set(DOXYGEN_GENERATE_HTML YES)
         set(DOXYGEN_GENERATE_TREEVIEW YES)
+        set(DOXYGEN_DISABLE_INDEX NO)
+        set(DOXYGEN_FULL_SIDEBAR NO)
         set(DOXYGEN_EXCLUDE_SYMBOLS detail)
         set(DOXYGEN_EXTRACT_STATIC YES)
+        set(DOXYGEN_STRIP_FROM_PATH include/)
         set(DOXYGEN_HIDE_SCOPE_NAMES YES)
+        set(DOXYGEN_HTML_EXTRA_STYLESHEET
+            "${PROJECT_SOURCE_DIR}/third-party/doxygen-awesome-css/doxygen-awesome.css"
+            "${PROJECT_SOURCE_DIR}/third-party/doxygen-awesome-css/doxygen-awesome-sidebar-only.css"
+        )
         doxygen_add_docs(docs
             "${PROJECT_SOURCE_DIR}/include"
             "${PROJECT_SOURCE_DIR}/docs/*.dox"
