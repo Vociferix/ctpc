@@ -52,7 +52,29 @@ struct Map {
     }
 };
 
+/// @brief Transforms the result of a parser
 /// @ingroup ctpc_combinators
+///
+/// Combinator signature:
+/// ```
+/// map(Parser parser, U(T...) transform) -> U
+/// ```
+///
+/// The result of the provided parser is transformed using the provided
+/// callable. When the result of the provided parser is a `std::tuple`,
+/// the elements of the `std::tuple` are passed to the callable as
+/// separate arguments. When the result of the parser is `void` or
+/// `std::tuple<>` (the empty tuple), the callable will be passed no
+/// arguments.
+///
+/// When used in combination with `seq` (e.g.
+/// `map(seq(...), callback)`), the callable will be passed an argument,
+/// for each component of the `seq` call, since `seq` returns a
+/// `std::tuple` of the components' results. Additionally, components
+/// that have a result of type `void` will not have a corresponding
+/// argument that's passed to the callable. This behavior can be
+/// elicited by wrapping a component parser in `ignore`, if the
+/// component doesn't already have a `void` result.
 static constexpr Map map{};
 
 }

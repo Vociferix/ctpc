@@ -45,7 +45,17 @@ struct Ignore {
     }
 };
 
+/// @brief Discards the result of a parser
 /// @ingroup ctpc_combinators
+///
+/// Combinator signature:
+/// ```
+/// ignore(Parser parser) -> void
+/// ```
+///
+/// Passing a parser into `ignore` returns a new parser that behaves exactly
+/// the same as the provided parser, except that the parse result is now void
+/// on a successful parse.
 static constexpr Ignore ignore{};
 
 }
