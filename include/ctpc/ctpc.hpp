@@ -16,6 +16,7 @@
 #include "is_not.hpp"
 #include "many0.hpp"
 #include "map.hpp"
+#include "flat_map.hpp"
 #include "verbatim.hpp"
 #include "regex_match.hpp"
 #include "preceded.hpp"
