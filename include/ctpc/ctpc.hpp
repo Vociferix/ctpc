@@ -15,6 +15,7 @@
 #include "byte.hpp"
 #include "is_not.hpp"
 #include "many0.hpp"
+#include "many1.hpp"
 #include "map.hpp"
 #include "flat_map.hpp"
 #include "verbatim.hpp"

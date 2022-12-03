@@ -1,5 +1,5 @@
-#ifndef CTPC_MANY0_HPP
-#define CTPC_MANY0_HPP
+#ifndef CTPC_MANY1_HPP
+#define CTPC_MANY1_HPP
 
 #include "parser.hpp"
 #include "input.hpp"
@@ -11,7 +11,7 @@ namespace ctpc {
 namespace detail {
 
 template <typename P, typename R, typename T>
-struct Many0Parser {
+struct Many1Parser {
   private:
     [[no_unique_address]] P parser_;
     [[no_unique_address]] R reduce_;
@@ -32,21 +32,31 @@ struct Many0Parser {
 
     template <typename Self, ParseableBy<P> I>
     static constexpr auto call(Self&& self, I input) -> ParseResultOf<decltype(init<I>()), I> {
-        auto accum = init<I>(self);
+        std::optional<decltype(init<I>(self))> accum = std::nullopt;
         std::ranges::subrange in{input};
+        {
+            auto res = self.parser_(in);
+            if (!res) {
+                return fail<decltype(init<I>(self))>(in);
+            }
+            in = res.remaining();
+            accum = utils::invoke_unpacked(self.reduce_, init<I>(self), *std::move(res));
+        }
+
         for (;;) {
             auto res = self.parser_(in);
             if (!res) {
                 break;
             }
             in = res.remaining();
-            accum = utils::invoke_unpacked(self.reduce_, std::move(accum), *std::move(res));
+            accum = utils::invoke_unpacked(self.reduce_, *std::move(accum), *std::move(res));
         }
-        return pass<decltype(accum)>(in, std::move(accum));
+
+        return pass<decltype(accum)>(in, *std::move(accum));
     }
 
   public:
-    constexpr Many0Parser(P&& parser, R&& reduce, T&& init)
+    constexpr Many1Parser(P&& parser, R&& reduce, T&& init)
         : parser_(std::forward<P>(parser)),
           reduce_(std::forward<R>(reduce)),
           init_(std::forward<T>(init)) {}
@@ -66,17 +76,17 @@ struct Many0Parser {
 
 }
 
-struct Many0 {
+struct Many1 {
     template <typename P, typename R, typename T>
     constexpr auto operator()(P&& parser,
                               R&& reduce = utils::default_reduce,
-                              T&& init = utils::default_reduce_init) const -> detail::Many0Parser<P, R, T> {
-        return detail::Many0Parser<P, R, T>(std::forward<P>(parser), std::forward<R>(reduce), std::forward<T>(init));
+                              T&& init = utils::default_reduce_init) const -> detail::Many1Parser<P, R, T> {
+        return detail::Many1Parser<P, R, T>(std::forward<P>(parser), std::forward<R>(reduce), std::forward<T>(init));
     }
 };
 
 /// @ingroup ctpc_combinators
-static constexpr Many0 many0{};
+static constexpr Many1 many1{};
 
 }
 
