@@ -13,8 +13,8 @@ namespace detail {
 template <typename Parser, typename Combinator>
 struct FlatMapParser {
   private:
-    [[no_unique_address]] Parser parser_;
-    [[no_unique_address]] Combinator combinator_;
+    CTPC_NO_UNIQUE_ADDR Parser parser_;
+    CTPC_NO_UNIQUE_ADDR Combinator combinator_;
 
   public:
     constexpr FlatMapParser(Parser&& parser, Combinator&& combinator)

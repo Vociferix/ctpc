@@ -12,32 +12,19 @@ namespace detail {
 template <typename P>
 struct IsNotParser {
   private:
-    [[no_unique_address]] P parser_;
-
-    template <typename T, ParseableBy<P> I>
-    static constexpr auto call(T&& self, I input) {
-        auto res = std::forward<T>(self).parser_(input);
-        if (res) {
-            return fail<void>(input);
-        } else {
-            return pass<void>(input);
-        }
-    }
+    CTPC_NO_UNIQUE_ADDR P parser_;
 
   public:
     explicit constexpr IsNotParser(P&& parser)
         : parser_(std::forward<P>(parser)) {}
 
-    constexpr auto operator()(ParseableBy<P> auto input) & {
-        return call(*this, input);
-    }
-
-    constexpr auto operator()(ParseableBy<P> auto input) const& {
-        return call(*this, input);
-    }
-
-    constexpr auto operator()(ParseableBy<P> auto input) && {
-        return call(std::move(*this), input);
+    constexpr auto operator()(ParseableBy<P> auto input) const {
+        auto res = parser_(input);
+        if (res) {
+            return fail<void>(input);
+        } else {
+            return pass<void>(input);
+        }
     }
 };
 

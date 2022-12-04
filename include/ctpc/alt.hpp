@@ -4,6 +4,7 @@
 #include "input.hpp"
 #include "parser.hpp"
 #include "parse_result.hpp"
+#include "utils.hpp"
 
 namespace ctpc {
 
@@ -34,35 +35,20 @@ struct AltParser<> {
 template <typename P1, typename... PN>
 struct AltParser<P1, PN...> {
   private:
-    [[no_unique_address]] P1 parser_;
-    [[no_unique_address]] AltParser<PN...> inner_;
+    CTPC_NO_UNIQUE_ADDR P1 parser_;
+    CTPC_NO_UNIQUE_ADDR AltParser<PN...> inner_;
 
     template <typename...>
     friend struct AltParser;
 
-    template <typename Ret, typename T, ParseableBy<P1> I>
-    static constexpr auto call_impl(T&& self, I input) -> ParseResultOf<Ret, I> {
-        auto res = self.parser_(input);
+    template <typename Ret, ParseableBy<P1> I>
+    constexpr auto call(I input) const -> ParseResultOf<Ret, I> {
+        auto res = parser_(input);
         if (res) {
             return res;
         } else {
-            return std::forward<T>(self).inner_.template call<Ret>(input);
+            return inner_.template call<Ret>(input);
         }
-    }
-
-    template <typename Ret, ParseableBy<P1> I>
-    constexpr auto call(I input) & -> ParseResultOf<Ret, I> {
-        return call_impl<Ret>(*this, input);
-    }
-
-    template <typename Ret, ParseableBy<P1> I>
-    constexpr auto call(I input) const& -> ParseResultOf<Ret, I> {
-        return call_impl<Ret>(*this, input);
-    }
-
-    template <typename Ret, ParseableBy<P1> I>
-    constexpr auto call(I input) && -> ParseResultOf<Ret, I> {
-        return call_impl<Ret>(std::move(*this), input);
     }
 
     template <typename I>
@@ -73,16 +59,8 @@ struct AltParser<P1, PN...> {
         : parser_(std::forward<P1>(parser)),
           inner_(std::forward<PN>(inner)...) {}
 
-    constexpr auto operator()(ParseableBy<P1> auto input) & {
+    constexpr auto operator()(ParseableBy<P1> auto input) const {
         return call<ret_t<decltype(input)>>(input);
-    }
-
-    constexpr auto operator()(ParseableBy<P1> auto input) const& {
-        return call<ret_t<decltype(input)>>(input);
-    }
-
-    constexpr auto operator()(ParseableBy<P1> auto input) && {
-        return std::move(*this).template call<ret_t<decltype(input)>>(input);
     }
 };
 

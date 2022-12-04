@@ -11,6 +11,12 @@
         return name(std::forward<decltype(args)>(args)...); \
     }
 
+#ifdef _MSC_VER
+#define CTPC_NO_UNIQUE_ADDR [[msvc::no_unique_address]]
+#else
+#define CTPC_NO_UNIQUE_ADDR [[no_unique_address]]
+#endif
+
 namespace ctpc::utils {
 
 // type trait to check if a type is a std::tuple
@@ -75,6 +81,15 @@ template <typename T>
 concept Reservable = requires(T container) {
     container.reserve(size_t{42});
 };
+
+struct DefaultInit {
+    template <typename T>
+    constexpr operator T() const {
+        return T{};
+    }
+};
+
+static constexpr DefaultInit default_init{};
 
 }
 

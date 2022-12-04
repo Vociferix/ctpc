@@ -15,31 +15,18 @@ namespace detail {
 template <typename P, typename M>
 struct MapParser {
   private:
-    P parser_;
-    M mapper_;
-
-    template <typename T, ParseableBy<P> I>
-    static constexpr auto call(T&& self, I input) {
-        return self.parser_(input).map([&self] (auto&&... value) {
-            return utils::invoke_unpacked(self.mapper_, std::forward<decltype(value)>(value)...);
-        });
-    }
+    CTPC_NO_UNIQUE_ADDR P parser_;
+    CTPC_NO_UNIQUE_ADDR M mapper_;
 
   public:
     explicit constexpr MapParser(P&& parser, M&& mapper)
         : parser_(std::forward<P>(parser)),
           mapper_(std::forward<M>(mapper)) {}
 
-    constexpr auto operator()(ParseableBy<P> auto input) & {
-        return call(*this, input);
-    }
-
-    constexpr auto operator()(ParseableBy<P> auto input) const& {
-        return call(*this, input);
-    }
-
-    constexpr auto operator()(ParseableBy<P> auto input) && {
-        return call(std::move(*this), input);
+    constexpr auto operator()(ParseableBy<P> auto input) const {
+        return parser_(input).map([this] (auto&&... value) {
+            return utils::invoke_unpacked(mapper_, std::forward<decltype(value)>(value)...);
+        });
     }
 };
 

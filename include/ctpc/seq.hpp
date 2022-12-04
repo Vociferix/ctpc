@@ -41,56 +41,31 @@ struct SeqParser<> {
 template <typename P1, typename... PN>
 struct SeqParser<P1, PN...> {
   private:
-    [[no_unique_address]] P1 parser_;
-    [[no_unique_address]] SeqParser<PN...> inner_;
+    CTPC_NO_UNIQUE_ADDR P1 parser_;
+    CTPC_NO_UNIQUE_ADDR SeqParser<PN...> inner_;
 
     template <typename...>
     friend struct SeqParser;
 
-    template <typename T, ParseableBy<P1> I, typename... Ret>
-    static constexpr auto call_impl(T&& self, I input, Ret&&... ret) {
-        auto res = self.parser_(input);
+    template <ParseableBy<P1> I, typename... Ret>
+    constexpr auto call(I input, Ret&&... ret) const {
+        auto res = parser_(input);
         if constexpr (std::is_void_v<typename std::remove_cvref_t<decltype(res)>::value_type>) {
             if (res) {
-                return std::forward<T>(self).inner_.call(res.remaining(), std::forward<Ret>(ret)...);
+                return inner_.call(res.remaining(), std::forward<Ret>(ret)...);
             } else {
-                using res_t = std::remove_cvref_t<decltype(std::forward<T>(self).inner_.call(res.remaining(), std::forward<Ret>(ret)...))>;
+                using res_t = std::remove_cvref_t<decltype(inner_.call(res.remaining(), std::forward<Ret>(ret)...))>;
                 return fail<typename res_t::value_type>(input);
             }
         } else {
             if (res) {
                 auto rem = res.remaining();
-                return std::forward<T>(self).inner_.call(rem, std::forward<Ret>(ret)..., *std::move(res));
+                return inner_.call(rem, std::forward<Ret>(ret)..., *std::move(res));
             } else {
-                using res_t = std::remove_cvref_t<decltype(std::forward<T>(self).inner_.call(res.remaining(), std::forward<Ret>(ret)..., *std::move(res)))>;
+                using res_t = std::remove_cvref_t<decltype(inner_.call(res.remaining(), std::forward<Ret>(ret)..., *std::move(res)))>;
                 return fail<typename res_t::value_type>(input);
             }
         }
-    }
-
-    template <typename T, ParseableBy<P1> I>
-    static constexpr auto call_first(T&& self, I input) {
-        auto res = call_impl(std::forward<T>(self), input);
-        if (res) {
-            return res;
-        } else {
-            return fail<typename std::remove_cvref_t<decltype(res)>::value_type>(input);
-        }
-    }
-
-    template <ParseableBy<P1> I, typename... Ret>
-    constexpr auto call(I input, Ret&&... ret) & {
-        return call_impl(*this, input, std::forward<Ret>(ret)...);
-    }
-
-    template <ParseableBy<P1> I, typename... Ret>
-    constexpr auto call(I input, Ret&&... ret) const& {
-        return call_impl(*this, input, std::forward<Ret>(ret)...);
-    }
-
-    template <ParseableBy<P1> I, typename... Ret>
-    constexpr auto call(I input, Ret&&... ret) && {
-        return call_impl(std::move(*this), input, std::forward<Ret>(ret)...);
     }
 
   public:
@@ -98,16 +73,13 @@ struct SeqParser<P1, PN...> {
         : parser_(std::forward<P1>(parser)),
           inner_(std::forward<PN>(inner)...) {}
 
-    constexpr auto operator()(ParseableBy<P1> auto input) & {
-        return call_first(*this, input);
-    }
-
-    constexpr auto operator()(ParseableBy<P1> auto input) const& {
-        return call_first(*this, input);
-    }
-
-    constexpr auto operator()(ParseableBy<P1> auto input) && {
-        return call_first(std::move(*this), input);
+    constexpr auto operator()(ParseableBy<P1> auto input) const {
+        auto res = call(input);
+        if (res) {
+            return res;
+        } else {
+            return fail<typename std::remove_cvref_t<decltype(res)>::value_type>(input);
+        }
     }
 };
 

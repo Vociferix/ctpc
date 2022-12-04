@@ -14,16 +14,20 @@ namespace detail {
 template <size_t N, typename P>
 struct StaticCountParser {
   private:
-    [[no_unique_address]] P parser_;
+    CTPC_NO_UNIQUE_ADDR P parser_;
 
-    template <typename Self, ParseableBy<P> I>
-    static constexpr auto call(Self&& self, I input) {
-        using item_t = std::remove_cvref_t<decltype(*self.parser_(input))>;
+  public:
+    constexpr StaticCountParser(P&& parser)
+        : parser_(std::forward<P>(parser)) {}
+
+    template <ParseableBy<P> I>
+    constexpr auto operator()(I input) const& {
+        using item_t = std::remove_cvref_t<decltype(*parser_(input))>;
         std::array<item_t, N> ret{};
         std::ranges::subrange in{input};
 
         for (size_t i = 0; i < N; ++i) {
-            auto res = self.parser_(in);
+            auto res = parser_(in);
             if (!res) {
                 return fail<std::array<item_t, N>>(input);
             }
@@ -31,25 +35,6 @@ struct StaticCountParser {
             ret[i] = *std::move(res);
         }
         return pass<std::array<item_t, N>>(input, std::move(ret));
-    }
-
-  public:
-    constexpr StaticCountParser(P&& parser)
-        : parser_(std::forward<P>(parser)) {}
-
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I input) & {
-        return call(*this, input);
-    }
-
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I input) const& {
-        return call(*this, input);
-    }
-
-    template <ParseableBy<P> I>
-    constexpr auto operator()(I input) && {
-        return call(std::move(*this), input);
     }
 };
 
