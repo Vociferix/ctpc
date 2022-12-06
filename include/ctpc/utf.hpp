@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <iterator>
 #include <optional>
+#include <ranges>
 #include <type_traits>
 
 namespace ctpc::utils {
@@ -40,6 +41,8 @@ struct Utf8ToUtf32 {
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::forward_iterator_tag;
 
+    constexpr Utf8ToUtf32() = default;
+
     constexpr Utf8ToUtf32(I first, S last)
         : range_(first, last) {
         operator++();
@@ -65,21 +68,21 @@ struct Utf8ToUtf32 {
 
         size_t count = 0;
         if ((c & 0b1000'0000) == 0b0000'0000) {
-            count = 1;
+            count = 0;
         } else if ((c & 0b1110'0000) == 0b1100'0000) {
-            count = 2;
+            count = 1;
             c &= 0b0001'1111;
         } else if ((c & 0b1111'0000) == 0b1110'0000) {
-            count = 3;
+            count = 2;
             c &= 0b0000'1111;
         } else if ((c & 0b1111'1000) == 0b1111'0000) {
-            count = 4;
+            count = 3;
             c &= 0b0000'0111;
         } else if ((c & 0b1111'1100) == 0b1111'1000) {
-            count = 5;
+            count = 4;
             c &= 0b0000'0011;
         } else if ((c & 0b1111'1110) == 0b1111'1100) {
-            count = 6;
+            count = 5;
             c &= 0b0000'0001;
         } else {
             c = 0xFFFD;
@@ -114,6 +117,14 @@ struct Utf8ToUtf32 {
         return curr_;
     }
 
+    friend constexpr bool operator==(const Utf8ToUtf32& lhs, const Utf8ToUtf32& rhs) {
+        if (lhs.range_.empty()) {
+            return rhs.range_.empty();
+        } else {
+            return !rhs.range_.empty() && lhs.range_.begin() == rhs.range_.begin();
+        }
+    }
+
     friend constexpr bool operator==(const Utf8ToUtf32& lhs, [[maybe_unused]] std::default_sentinel_t rhs) {
         return !lhs.curr_.has_value();
     }
@@ -135,6 +146,8 @@ struct Utf32ToUtf8 {
     using value_type = O;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::forward_iterator_tag;
+
+    constexpr Utf32ToUtf8() = default;
 
     constexpr Utf32ToUtf8(I first, S last)
         : range_(first, last) {
@@ -205,6 +218,17 @@ struct Utf32ToUtf8 {
         return ret;
     }
 
+    friend constexpr bool operator==(const Utf32ToUtf8& lhs, const Utf32ToUtf8& rhs) {
+        if (lhs.pos_ == rhs.pos_) {
+            if (lhs.range_.empty()) {
+                return rhs.range_.empty();
+            } else {
+                return !rhs.range_.empty() && lhs.range_.begin() == rhs.range_.begin();
+            }
+        }
+        return false;
+    }
+
     friend constexpr bool operator==(const Utf32ToUtf8& lhs, [[maybe_unused]] std::default_sentinel_t rhs) {
         return !lhs.curr_.has_value();
     }
@@ -224,6 +248,8 @@ struct Utf16ToUtf32 {
     using value_type = O;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::forward_iterator_tag;
+
+    constexpr Utf16ToUtf32() = default;
 
     constexpr Utf16ToUtf32(I first, S last)
         : range_(first, last) {
@@ -255,7 +281,7 @@ struct Utf16ToUtf32 {
             }
 
             auto d = static_cast<uint32_t>(range_.front());
-            range_ = range_.enxt();
+            range_ = range_.next();
             if ((d & 0b1111'1100'0000'0000) != 0b1101'1100'0000'0000) {
                 curr_.emplace(static_cast<O>(0xFFFD));
                 return *this;
@@ -275,6 +301,14 @@ struct Utf16ToUtf32 {
         auto ret = *this;
         operator++();
         return ret;
+    }
+
+    friend constexpr bool operator==(const Utf16ToUtf32& lhs, const Utf16ToUtf32& rhs) {
+        if (lhs.range_.empty()) {
+            return rhs.range_.empty();
+        } else {
+            return !rhs.range_.empty() && lhs.range_.begin() == rhs.range_.begin();
+        }
     }
 
     friend constexpr bool operator==(const Utf16ToUtf32& lhs, [[maybe_unused]] std::default_sentinel_t rhs) {
@@ -297,6 +331,8 @@ struct Utf32ToUtf16 {
     using value_type = O;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::forward_iterator_tag;
+
+    constexpr Utf32ToUtf16() = default;
 
     constexpr Utf32ToUtf16(I first, S last)
         : range_(first, last) {
@@ -345,6 +381,17 @@ struct Utf32ToUtf16 {
         return ret;
     }
 
+    friend constexpr bool operator==(const Utf32ToUtf16& lhs, const Utf32ToUtf16& rhs) {
+        if (lhs.next_.has_value() == rhs.next_.has_value()) {
+            if (lhs.range_.empty()) {
+                return rhs.range_.empty();
+            } else {
+                return !rhs.range_.empty() && lhs.range_.begin() == rhs.range_.begin();
+            }
+        }
+        return false;
+    }
+
     friend constexpr bool operator==(const Utf32ToUtf16& lhs, [[maybe_unused]] std::default_sentinel_t rhs) {
         return !lhs.curr_.has_value();
     }
@@ -362,7 +409,20 @@ struct Utf8ToUtf16 : Utf32ToUtf16<Utf8ToUtf32<I, S>, std::default_sentinel_t, O>
                 std::default_sentinel) {}
 
     constexpr Utf8ToUtf16(std::ranges::subrange<I, S> range)
-        : Utf32ToUtf16<Utf8ToUtf32<I, S>, std::default_sentinel_t, O>(range) {}
+        : Utf32ToUtf16<Utf8ToUtf32<I, S>, std::default_sentinel_t, O>(
+                Utf8ToUtf32<I, S>(range),
+                std::default_sentinel) {}
+
+    constexpr Utf8ToUtf16& operator++() {
+        Utf32ToUtf16<Utf8ToUtf32<I, S>, std::default_sentinel_t, O>::operator++();
+        return *this;
+    }
+
+    constexpr Utf8ToUtf16 operator++(int) {
+        auto ret = *this;
+        operator++();
+        return ret;
+    }
 };
 
 template <std::forward_iterator I, std::sentinel_for<I> S = I, typename O = char8_t>
@@ -373,7 +433,20 @@ struct Utf16ToUtf8 : Utf32ToUtf8<Utf16ToUtf32<I, S>, std::default_sentinel_t, O>
                 std::default_sentinel) {}
 
     constexpr Utf16ToUtf8(std::ranges::subrange<I, S> range)
-        : Utf32ToUtf8<Utf16ToUtf32<I, S>, std::default_sentinel_t, O>(range) {}
+        : Utf32ToUtf8<Utf16ToUtf32<I, S>, std::default_sentinel_t, O>(
+                Utf16ToUtf32<I, S>(range),
+                std::default_sentinel) {}
+
+    constexpr Utf16ToUtf8& operator++() {
+        Utf32ToUtf8<Utf16ToUtf32<I, S>, std::default_sentinel_t, O>::operator++();
+        return *this;
+    }
+
+    constexpr Utf16ToUtf8 operator++(int) {
+        auto ret = *this;
+        operator++();
+        return ret;
+    }
 };
 
 template <std::forward_iterator I, std::sentinel_for<I> S = I, typename O = std::remove_cvref_t<std::iter_value_t<I>>>
@@ -385,6 +458,8 @@ struct UtfIdentity {
     using value_type = O;
     using difference_type = std::ptrdiff_t;
     using iterator_category = std::forward_iterator_tag;
+
+    constexpr UtfIdentity() = default;
 
     constexpr UtfIdentity(I first, S last)
         : range_(first, last) {}
@@ -405,6 +480,14 @@ struct UtfIdentity {
         auto ret = *this;
         operator++();
         return ret;
+    }
+
+    friend constexpr bool operator==(const UtfIdentity& lhs, const UtfIdentity& rhs) {
+        if (lhs.range_.empty()) {
+            return rhs.range_.empty();
+        } else {
+            return !rhs.range_.empty() && lhs.range_.begin() == rhs.range_.begin();
+        }
     }
 
     friend constexpr bool operator==(const UtfIdentity& lhs, [[maybe_unused]] std::default_sentinel_t rhs) {
@@ -430,6 +513,20 @@ constexpr auto utf_convert_impl(Range&& range) {
 
 }
 
+/// @brief Lazily converts one UTF encoding into another UTF encoding
+///
+/// @details
+/// This function takes a UTF encoded range and returns a new view of
+/// the same range lazily converted to a UTF encoding matching the type
+/// `To`. The output encoding and the assumed input encoding depend on
+/// the byte width of the input range character type and the `To` type,
+/// respectively. For each, given character type `T`:
+///   * `sizeof(T) == 1`: UTF-8 (e.g. `char8_t`)
+///   * `sizeof(T) == 2`: UTF-16 (e.g. `char16_t`)
+///   * `sizeof(T) == 4`: UTF-32 (e.g. `char32_t`)
+///
+/// The output view lazily converts characters from the input range in
+/// order when they are fetched, such as during iteration.
 template <typename To, typename Range>
 constexpr auto utf_convert(Range&& range) {
     using from_t = std::remove_cvref_t<std::ranges::range_value_t<Range>>;

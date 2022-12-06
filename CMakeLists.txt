@@ -5,6 +5,8 @@ project(ctpc
     LANGUAGES CXX
 )
 
+option(CTPC_DEVEL "Enable default options for development" OFF)
+
 add_subdirectory(third-party/ctre EXCLUDE_FROM_ALL)
 
 add_library(ctpc INTERFACE)
@@ -16,12 +18,27 @@ target_include_directories(ctpc INTERFACE
 )
 target_compile_features(ctpc INTERFACE cxx_std_20)
 
-option(CTPC_EXAMPLES "Build ctpc examples" OFF)
+option(CTPC_EXAMPLES "Build ctpc examples" ${CTPC_DEVEL})
 if(CTPC_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-option(CTPC_DOCS "Build ctpc docs" ON)
+option(CTPC_TESTS "Build ctpc tests" ${CTPC_DEVEL})
+if(CTPC_TESTS)
+    include(FetchContent)
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v3.2.0
+    )
+    FetchContent_MakeAvailable(Catch2)
+    list(APPEND CMAKE_MODULE_PATH "${catch2_SOURCE_DIR}/extra")
+    include(CTest)
+    include(Catch)
+    add_subdirectory(tests)
+endif()
+
+option(CTPC_DOCS "Build ctpc docs" ${CTPC_DEVEL})
 if(CTPC_DOCS)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
