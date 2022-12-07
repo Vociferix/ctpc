@@ -7,6 +7,7 @@
 #include "utils.hpp"
 
 #include "alt.hpp"
+#include "complete.hpp"
 #include "seq.hpp"
 #include "ignore.hpp"
 #include "integer.hpp"
