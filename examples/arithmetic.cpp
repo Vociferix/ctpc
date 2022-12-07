@@ -83,17 +83,25 @@ constexpr ParseResultOf<int64_t, I> expr_(I input) {
     )(input);
 }
 
-int main() {
+int main(int argc, char** argv) {
     static constexpr auto expression = "1 + (2 + 3) * -(1 + 1)"sv;
     static_assert(*expr(expression) == -9, "test failure!");
 
-    auto res = expr(expression);
-    if (res) {
-        std::cout << expression << " = " << *res << '\n';
-    } else {
-        std::cout << "failed to parse \"" << expression << "\"\n";
-        return 1;
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " [expression]...\n";
+        return 0;
     }
 
-    return 0;
+    int ret = 0;
+    for (size_t i = 1; i < static_cast<size_t>(argc); ++i) {
+        std::string_view input = argv[i];
+        auto res = expr(input);
+        if (res) {
+            std::cout << input << " = " << *res << '\n';
+        } else {
+            std::cout << "failed to parse \"" << input << "\"\n";
+            ++ret;
+        }
+    }
+    return ret;
 }
