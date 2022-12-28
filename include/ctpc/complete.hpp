@@ -26,7 +26,7 @@ struct CompleteParser {
         }
         return res;
     }
-}
+};
 
 }
 
