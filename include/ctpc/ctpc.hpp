@@ -8,6 +8,7 @@
 
 #include "alt.hpp"
 #include "complete.hpp"
+#include "convert.hpp"
 #include "seq.hpp"
 #include "ignore.hpp"
 #include "integer.hpp"
@@ -24,5 +25,7 @@
 #include "preceded.hpp"
 #include "terminated.hpp"
 #include "delimited.hpp"
+#include "utf.hpp"
+#include "reinterpret.hpp"
 
 #endif

@@ -7,7 +7,12 @@
 #include <ranges>
 #include <type_traits>
 
-namespace ctpc::utils {
+#include "input.hpp"
+#include "parse_result.hpp"
+
+namespace ctpc {
+
+namespace utils {
 
 template <typename T>
 struct is_text_char : std::false_type {};
@@ -558,6 +563,41 @@ constexpr auto utf_convert(Range&& range) {
         }
     }
 }
+
+}
+
+template <typename Char>
+struct Utf {
+    template <Input I>
+    constexpr auto operator()(I input) {
+        return pass<void>(utils::utf_convert<Char>(input));
+    }
+};
+
+/// @ingroup ctpc_parsers
+template <typename Char>
+static constexpr Utf<Char> utf{};
+
+/// @ingroup ctpc_parsers
+static constexpr const auto& utf8 = utf<char8_t>;
+
+/// @ingroup ctpc_parsers
+static constexpr const auto& utf16 = utf<char16_t>;
+
+/// @ingroup ctpc_parsers
+static constexpr const auto& utf32 = utf<char32_t>;
+
+/// @ingroup ctpc_parsers
+static constexpr const auto& wutf = utf<wchar_t>;
+
+/// @ingroup ctpc_parsers
+static constexpr const auto& sutf = utf<char>;
+
+/// @ingroup ctpc_parsers
+static constexpr const auto& uutf = utf<unsigned char>;
+
+/// @ingroup ctpc_parsers
+static constexpr const auto& butf = utf<std::byte>;
 
 }
 
